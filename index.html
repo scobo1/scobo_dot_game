@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dots & Boxes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-bottom: 32px;
+  }
+
+  /* Setup Screen */
+  #setup {
+    background: #16213e;
+    border: 1px solid #2d3a5e;
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .setup-section {
+    margin-bottom: 24px;
+  }
+
+  .setup-section label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+    margin-bottom: 10px;
+  }
+
+  .option-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .option-btn {
+    background: #0f3460;
+    border: 2px solid #1e4080;
+    color: #e0e0e0;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .option-btn:hover { border-color: #a78bfa; }
+  .option-btn.selected { background: #4c1d95; border-color: #a78bfa; color: #fff; }
+
+  .player-names {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .player-name-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .player-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .player-name-row input {
+    flex: 1;
+    background: #0f3460;
+    border: 2px solid #1e4080;
+    border-radius: 8px;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .player-name-row input:focus { border-color: #a78bfa; }
+
+  #start-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 14px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-top: 8px;
+  }
+
+  #start-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #start-btn:active { transform: translateY(0); }
+
+  /* Game Screen */
+  #game { display: none; width: 100%; max-width: 700px; }
+
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .scores {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .score-card {
+    background: #16213e;
+    border: 2px solid #2d3a5e;
+    border-radius: 10px;
+    padding: 8px 14px;
+    text-align: center;
+    transition: border-color 0.2s;
+    min-width: 80px;
+  }
+
+  .score-card.active { border-color: var(--player-color); box-shadow: 0 0 12px -2px var(--player-color); }
+
+  .score-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+  }
+
+  .score-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--player-color);
+    line-height: 1.1;
+  }
+
+  .turn-info {
+    background: #16213e;
+    border: 2px solid #2d3a5e;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .turn-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  #new-game-btn {
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    align-self: center;
+  }
+
+  #new-game-btn:hover { border-color: #a78bfa; color: #e0e0e0; }
+
+  #game-canvas {
+    display: block;
+    border-radius: 12px;
+    cursor: pointer;
+    touch-action: none;
+    width: 100%;
+  }
+
+  /* Winner overlay */
+  #winner-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #winner-overlay.show { display: flex; }
+
+  .winner-card {
+    background: #16213e;
+    border: 2px solid #4c1d95;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    max-width: 360px;
+    width: 90%;
+    box-shadow: 0 0 60px -10px #a78bfa;
+  }
+
+  .winner-card h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .winner-card p { color: #9ca3af; margin-bottom: 24px; }
+
+  .final-scores { margin-bottom: 24px; }
+  .final-score-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #1e293b;
+    font-size: 0.95rem;
+  }
+
+  .play-again-btn {
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 12px 32px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .play-again-btn:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+
+<h1>Dots &amp; Boxes</h1>
+<p class="subtitle">Connect the dots. Close the boxes. Win the game.</p>
+
+<!-- Setup -->
+<div id="setup">
+  <div class="setup-section">
+    <label>Number of Players</label>
+    <div class="option-group" id="player-count-opts">
+      <button class="option-btn" data-val="2">2</button>
+      <button class="option-btn" data-val="3">3</button>
+      <button class="option-btn" data-val="4">4</button>
+    </div>
+  </div>
+
+  <div class="setup-section">
+    <label>Grid Size (boxes)</label>
+    <div class="option-group" id="grid-size-opts">
+      <button class="option-btn" data-val="3">3×3</button>
+      <button class="option-btn" data-val="4">4×4</button>
+      <button class="option-btn" data-val="5">5×5</button>
+      <button class="option-btn" data-val="6">6×6</button>
+      <button class="option-btn" data-val="8">8×8</button>
+    </div>
+  </div>
+
+  <div class="setup-section">
+    <label>Player Names</label>
+    <div class="player-names" id="player-names"></div>
+  </div>
+
+  <button id="start-btn">Start Game</button>
+</div>
+
+<!-- Game -->
+<div id="game">
+  <div class="game-header">
+    <div class="scores" id="scores"></div>
+    <button id="new-game-btn">New Game</button>
+  </div>
+  <div class="turn-info" id="turn-info">
+    <div class="turn-dot" id="turn-dot"></div>
+    <span id="turn-text"></span>
+  </div>
+  <canvas id="game-canvas"></canvas>
+</div>
+
+<!-- Winner overlay -->
+<div id="winner-overlay">
+  <div class="winner-card">
+    <h2 id="winner-title"></h2>
+    <p id="winner-subtitle"></p>
+    <div class="final-scores" id="final-scores"></div>
+    <button class="play-again-btn" onclick="showSetup()">Play Again</button>
+  </div>
+</div>
+
+<script>
+const PLAYER_COLORS = ['#f87171', '#60a5fa', '#4ade80', '#facc15'];
+const PLAYER_COLORS_FILL = ['rgba(248,113,113,0.25)', 'rgba(96,165,250,0.25)', 'rgba(74,222,128,0.25)', 'rgba(250,204,21,0.25)'];
+
+let cfg = { players: 2, grid: 5, names: [] };
+
+// --- Setup UI ---
+
+function initOptionGroup(groupId, defaultVal) {
+  const btns = document.querySelectorAll(`#${groupId} .option-btn`);
+  btns.forEach(b => {
+    if (parseInt(b.dataset.val) === defaultVal) b.classList.add('selected');
+    b.addEventListener('click', () => {
+      btns.forEach(x => x.classList.remove('selected'));
+      b.classList.add('selected');
+      if (groupId === 'player-count-opts') {
+        cfg.players = parseInt(b.dataset.val);
+        renderPlayerNames();
+      } else {
+        cfg.grid = parseInt(b.dataset.val);
+      }
+    });
+  });
+}
+
+function renderPlayerNames() {
+  const container = document.getElementById('player-names');
+  container.innerHTML = '';
+  for (let i = 0; i < cfg.players; i++) {
+    const row = document.createElement('div');
+    row.className = 'player-name-row';
+    const dot = document.createElement('div');
+    dot.className = 'player-dot';
+    dot.style.background = PLAYER_COLORS[i];
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = `Player ${i + 1}`;
+    input.value = cfg.names[i] || '';
+    input.addEventListener('input', () => { cfg.names[i] = input.value; });
+    row.appendChild(dot);
+    row.appendChild(input);
+    container.appendChild(row);
+  }
+}
+
+initOptionGroup('player-count-opts', 2);
+initOptionGroup('grid-size-opts', 5);
+cfg.players = 2;
+cfg.grid = 5;
+renderPlayerNames();
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('new-game-btn').addEventListener('click', showSetup);
+
+function showSetup() {
+  document.getElementById('winner-overlay').classList.remove('show');
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('setup').style.display = 'block';
+}
+
+// --- Game State ---
+let G = null;
+
+function startGame() {
+  const names = [];
+  document.querySelectorAll('#player-names input').forEach((inp, i) => {
+    names.push(inp.value.trim() || `Player ${i + 1}`);
+  });
+
+  const boxes = cfg.grid; // number of boxes per side
+  const dots = boxes + 1; // dots per side
+
+  G = {
+    boxes,
+    dots,
+    names,
+    numPlayers: cfg.players,
+    currentPlayer: 0,
+    scores: new Array(cfg.players).fill(0),
+    // hLines[row][col] = playerIndex or -1  (row: 0..boxes, col: 0..boxes-1)
+    hLines: Array.from({length: dots}, () => new Array(boxes).fill(-1)),
+    // vLines[row][col] = playerIndex or -1  (row: 0..boxes-1, col: 0..dots-1... wait col: 0..boxes)
+    vLines: Array.from({length: boxes}, () => new Array(dots).fill(-1)),
+    // boxes[row][col] = playerIndex or -1
+    boxOwner: Array.from({length: boxes}, () => new Array(boxes).fill(-1)),
+    gameOver: false,
+    hoverSeg: null, // {type, row, col}
+  };
+
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+
+  renderScores();
+  renderTurnInfo();
+  initCanvas();
+}
+
+// --- Canvas ---
+let canvas, ctx;
+const PAD = 30;
+const DOT_R = 5;
+
+function initCanvas() {
+  canvas = document.getElementById('game-canvas');
+  ctx = canvas.getContext('2d');
+
+  const maxW = Math.min(660, window.innerWidth - 40);
+  const size = maxW;
+  canvas.width = size;
+  canvas.height = size;
+  canvas.style.height = size + 'px';
+
+  canvas.removeEventListener('mousemove', onMouseMove);
+  canvas.removeEventListener('click', onClick);
+  canvas.removeEventListener('touchstart', onTouch);
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('click', onClick);
+  canvas.addEventListener('touchstart', onTouch, {passive: false});
+
+  draw();
+}
+
+function cellSize() {
+  return (canvas.width - PAD * 2) / G.boxes;
+}
+
+function dotPos(r, c) {
+  const cs = cellSize();
+  return { x: PAD + c * cs, y: PAD + r * cs };
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background
+  ctx.fillStyle = '#0f172a';
+  roundRect(ctx, 0, 0, canvas.width, canvas.height, 12);
+  ctx.fill();
+
+  const cs = cellSize();
+
+  // Filled boxes
+  for (let r = 0; r < G.boxes; r++) {
+    for (let c = 0; c < G.boxes; c++) {
+      const owner = G.boxOwner[r][c];
+      if (owner >= 0) {
+        const p = dotPos(r, c);
+        ctx.fillStyle = PLAYER_COLORS_FILL[owner];
+        ctx.fillRect(p.x, p.y, cs, cs);
+
+        // Player initial
+        ctx.fillStyle = PLAYER_COLORS[owner];
+        ctx.font = `bold ${Math.max(10, cs * 0.35)}px system-ui`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(G.names[owner][0].toUpperCase(), p.x + cs / 2, p.y + cs / 2);
+      }
+    }
+  }
+
+  // Hover preview
+  if (G.hoverSeg && !G.gameOver) {
+    const s = G.hoverSeg;
+    let claimed = false;
+    if (s.type === 'h') claimed = G.hLines[s.row][s.col] >= 0;
+    else claimed = G.vLines[s.row][s.col] >= 0;
+    if (!claimed) {
+      ctx.strokeStyle = PLAYER_COLORS[G.currentPlayer] + '88';
+      ctx.lineWidth = cs * 0.13;
+      ctx.lineCap = 'round';
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      if (s.type === 'h') {
+        const a = dotPos(s.row, s.col), b = dotPos(s.row, s.col + 1);
+        ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+      } else {
+        const a = dotPos(s.row, s.col), b = dotPos(s.row + 1, s.col);
+        ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // Lines
+  const lw = Math.max(3, cellSize() * 0.12);
+
+  // Horizontal lines
+  for (let r = 0; r <= G.boxes; r++) {
+    for (let c = 0; c < G.boxes; c++) {
+      const owner = G.hLines[r][c];
+      const a = dotPos(r, c), b = dotPos(r, c + 1);
+      if (owner >= 0) {
+        ctx.strokeStyle = PLAYER_COLORS[owner];
+        ctx.lineWidth = lw;
+        ctx.lineCap = 'round';
+        ctx.setLineDash([]);
+      } else {
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 6]);
+      }
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+  }
+
+  ctx.setLineDash([]);
+
+  // Vertical lines
+  for (let r = 0; r < G.boxes; r++) {
+    for (let c = 0; c <= G.boxes; c++) {
+      const owner = G.vLines[r][c];
+      const a = dotPos(r, c), b = dotPos(r + 1, c);
+      if (owner >= 0) {
+        ctx.strokeStyle = PLAYER_COLORS[owner];
+        ctx.lineWidth = lw;
+        ctx.lineCap = 'round';
+        ctx.setLineDash([]);
+      } else {
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 6]);
+      }
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+  }
+
+  ctx.setLineDash([]);
+
+  // Dots
+  for (let r = 0; r <= G.boxes; r++) {
+    for (let c = 0; c <= G.boxes; c++) {
+      const p = dotPos(r, c);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, DOT_R, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// --- Hit testing ---
+
+function nearestSegment(x, y) {
+  const cs = cellSize();
+  const threshold = cs * 0.3;
+  let best = null, bestDist = Infinity;
+
+  // Horizontal
+  for (let r = 0; r <= G.boxes; r++) {
+    for (let c = 0; c < G.boxes; c++) {
+      const a = dotPos(r, c), b = dotPos(r, c + 1);
+      const mx = (a.x + b.x) / 2, my = a.y;
+      const dist = Math.hypot(x - mx, y - my);
+      // Also check if point is within segment x-range
+      if (x >= a.x - threshold && x <= b.x + threshold && Math.abs(y - my) < threshold) {
+        const d2 = Math.abs(y - my);
+        if (d2 < bestDist) { bestDist = d2; best = {type: 'h', row: r, col: c}; }
+      }
+    }
+  }
+
+  // Vertical
+  for (let r = 0; r < G.boxes; r++) {
+    for (let c = 0; c <= G.boxes; c++) {
+      const a = dotPos(r, c), b = dotPos(r + 1, c);
+      if (y >= a.y - threshold && y <= b.y + threshold && Math.abs(x - a.x) < threshold) {
+        const d2 = Math.abs(x - a.x);
+        if (d2 < bestDist) { bestDist = d2; best = {type: 'v', row: r, col: c}; }
+      }
+    }
+  }
+
+  return bestDist < threshold ? best : null;
+}
+
+function canvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+function onMouseMove(e) {
+  if (G.gameOver) return;
+  const {x, y} = canvasCoords(e);
+  G.hoverSeg = nearestSegment(x, y);
+  draw();
+}
+
+function onClick(e) {
+  if (G.gameOver) return;
+  const {x, y} = canvasCoords(e);
+  const seg = nearestSegment(x, y);
+  if (seg) placeLine(seg);
+}
+
+function onTouch(e) {
+  e.preventDefault();
+  if (G.gameOver) return;
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (touch.clientX - rect.left) * scaleX;
+  const y = (touch.clientY - rect.top) * scaleY;
+  const seg = nearestSegment(x, y);
+  if (seg) placeLine(seg);
+}
+
+// --- Game Logic ---
+
+function placeLine(seg) {
+  const p = G.currentPlayer;
+
+  if (seg.type === 'h') {
+    if (G.hLines[seg.row][seg.col] >= 0) return;
+    G.hLines[seg.row][seg.col] = p;
+  } else {
+    if (G.vLines[seg.row][seg.col] >= 0) return;
+    G.vLines[seg.row][seg.col] = p;
+  }
+
+  const closed = checkBoxes(p);
+  G.hoverSeg = null;
+
+  if (isGameOver()) {
+    G.gameOver = true;
+    draw();
+    renderScores();
+    setTimeout(showWinner, 400);
+    return;
+  }
+
+  if (closed === 0) {
+    G.currentPlayer = (G.currentPlayer + 1) % G.numPlayers;
+  }
+  // If closed > 0, same player goes again
+
+  renderScores();
+  renderTurnInfo();
+  draw();
+}
+
+function checkBoxes(player) {
+  let count = 0;
+  for (let r = 0; r < G.boxes; r++) {
+    for (let c = 0; c < G.boxes; c++) {
+      if (G.boxOwner[r][c] >= 0) continue;
+      if (boxComplete(r, c)) {
+        G.boxOwner[r][c] = player;
+        G.scores[player]++;
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+function boxComplete(r, c) {
+  return G.hLines[r][c] >= 0 &&
+         G.hLines[r + 1][c] >= 0 &&
+         G.vLines[r][c] >= 0 &&
+         G.vLines[r][c + 1] >= 0;
+}
+
+function isGameOver() {
+  return G.scores.reduce((a, b) => a + b, 0) === G.boxes * G.boxes;
+}
+
+// --- UI Updates ---
+
+function renderScores() {
+  const container = document.getElementById('scores');
+  container.innerHTML = '';
+  for (let i = 0; i < G.numPlayers; i++) {
+    const card = document.createElement('div');
+    card.className = 'score-card' + (i === G.currentPlayer && !G.gameOver ? ' active' : '');
+    card.style.setProperty('--player-color', PLAYER_COLORS[i]);
+    card.innerHTML = `<div class="score-name">${G.names[i]}</div><div class="score-value">${G.scores[i]}</div>`;
+    container.appendChild(card);
+  }
+}
+
+function renderTurnInfo() {
+  const dot = document.getElementById('turn-dot');
+  const text = document.getElementById('turn-text');
+  dot.style.background = PLAYER_COLORS[G.currentPlayer];
+  text.textContent = `${G.names[G.currentPlayer]}'s turn`;
+}
+
+function showWinner() {
+  const overlay = document.getElementById('winner-overlay');
+  const title = document.getElementById('winner-title');
+  const subtitle = document.getElementById('winner-subtitle');
+  const finalScores = document.getElementById('final-scores');
+
+  const maxScore = Math.max(...G.scores);
+  const winners = G.names.filter((_, i) => G.scores[i] === maxScore);
+
+  if (winners.length === 1) {
+    title.textContent = `${winners[0]} Wins!`;
+    title.style.color = PLAYER_COLORS[G.names.indexOf(winners[0])];
+    subtitle.textContent = `With ${maxScore} box${maxScore !== 1 ? 'es' : ''} claimed.`;
+  } else {
+    title.textContent = "It's a Tie!";
+    title.style.color = '#a78bfa';
+    subtitle.textContent = `${winners.join(' & ')} tied with ${maxScore} boxes each.`;
+  }
+
+  finalScores.innerHTML = G.names.map((name, i) => `
+    <div class="final-score-row">
+      <span style="color:${PLAYER_COLORS[i]}">${name}</span>
+      <span style="font-weight:700">${G.scores[i]} box${G.scores[i] !== 1 ? 'es' : ''}</span>
+    </div>
+  `).join('');
+
+  overlay.classList.add('show');
+}
+
+window.showSetup = showSetup;
+</script>
+</body>
+</html>
