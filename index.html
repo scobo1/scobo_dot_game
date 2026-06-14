@@ -424,7 +424,7 @@ function renderPlayerNames() {
     swatchRow.style.paddingLeft = '26px';
 
     ALL_COLORS.forEach(color => {
-      const takenByOther = cfg.colors.some((c, j) => j !== i && c === color);
+      const takenByOther = cfg.colors.slice(0, cfg.players).some((c, j) => j !== i && c === color);
       const swatch = document.createElement('div');
       swatch.className = 'color-swatch' +
         (cfg.colors[i] === color ? ' selected' : '') +
