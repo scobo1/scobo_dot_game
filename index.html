@@ -118,6 +118,7 @@
 
   .color-swatch:hover { transform: scale(1.2); }
   .color-swatch.selected { border-color: #fff; transform: scale(1.15); }
+  .color-swatch.disabled { opacity: 0.2; cursor: not-allowed; transform: none; }
 
   .player-name-row input {
     flex: 1;
@@ -423,15 +424,16 @@ function renderPlayerNames() {
     swatchRow.style.paddingLeft = '26px';
 
     ALL_COLORS.forEach(color => {
+      const takenByOther = cfg.colors.some((c, j) => j !== i && c === color);
       const swatch = document.createElement('div');
-      swatch.className = 'color-swatch' + (cfg.colors[i] === color ? ' selected' : '');
+      swatch.className = 'color-swatch' +
+        (cfg.colors[i] === color ? ' selected' : '') +
+        (takenByOther ? ' disabled' : '');
       swatch.style.background = color;
-      swatch.title = color;
       swatch.addEventListener('click', () => {
+        if (swatch.classList.contains('disabled')) return;
         cfg.colors[i] = color;
-        dot.style.background = color;
-        swatchRow.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-        swatch.classList.add('selected');
+        renderPlayerNames(); // re-render all rows to update disabled states
       });
       swatchRow.appendChild(swatch);
     });
